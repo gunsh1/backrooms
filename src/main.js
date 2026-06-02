@@ -30,6 +30,7 @@ async function boot() {
     overlay.style.display = '';
     overlay.classList.remove('hidden');
   }
+  if (startHint) startHint.textContent = 'ロード中…';
   let p = 0;
   const tick = setInterval(() => {
     p = Math.min(95, p + 6 + Math.random() * 10);
@@ -41,7 +42,7 @@ async function boot() {
 
   clearInterval(tick);
   if (loaderBar) loaderBar.style.width = '100%';
-  if (startHint) startHint.textContent = 'クリックして開始';
+  if (startHint) startHint.textContent = 'ゲーム開始';
 }
 
 // （再）開始：ロックしてオーディオを開始（多重起動はガード済み）

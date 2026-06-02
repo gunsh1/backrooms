@@ -35,6 +35,22 @@
       #loader { width: 220px; height: 3px; background: rgba(216,210,160,0.15); overflow: hidden; }
       #loader > span { display: block; height: 100%; width: 0%; background: #d8d2a0; transition: width 0.25s ease; }
 
+      /* シンプルな「ゲーム開始」ボタン */
+      .start-btn {
+        margin-top: 0.4rem;
+        padding: 0.75rem 2.4rem;
+        border: 1px solid rgba(216,210,160,0.5);
+        border-radius: 2px;
+        font-size: 1.05rem; letter-spacing: 0.22em;
+        color: #e6e0b4;
+        background: rgba(20,19,10,0.25);
+        transition: background 0.25s ease, border-color 0.25s ease, opacity 0.4s ease;
+      }
+      #overlay:hover .start-btn {
+        background: rgba(216,210,160,0.14);
+        border-color: rgba(216,210,160,0.85);
+      }
+
       /* HUD: fake compass + coords */
       #hud {
         position: fixed; top: 14px; left: 14px; z-index: 5;
@@ -102,11 +118,8 @@
     </div>
 
     <div id="overlay" style="display: none;">
-      <h1>LEVEL&nbsp;0</h1>
-      <p>黄ばんだ壁紙、湿ったカーペット、ハム音を鳴らす蛍光灯。<br />出口を探して歩き続けろ。</p>
       <div id="loader"><span></span></div>
-      <div class="keys">W A S D — 移動 &nbsp;•&nbsp; SHIFT — 走る &nbsp;•&nbsp; マウス — 視点</div>
-      <div class="hint" id="hint-start">ローディング中...</div>
+      <div id="hint-start" class="start-btn">ゲーム開始</div>
     </div>
 
     <script type="module" src="/src/main.js"></script>
