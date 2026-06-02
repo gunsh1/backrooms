@@ -1,0 +1,18 @@
+# 依存・ビルド成果物
+node_modules/
+dist/
+
+# ログ・OS・エディタ
+*.log
+.DS_Store
+Thumbs.db
+__MACOSX/
+.vscode/
+
+# ローカルのClaude設定
+.claude/settings.local.json
+
+# 生アセットの元フォルダ（public/assets/ に取り込み済みのため重複を除外）
+# 必要なら下2行を消してコミットできます（10MB級のFBXを含みます）
+/backrooms_wallpapers/
+/backrooms lifeform animations/

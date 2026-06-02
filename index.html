@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Level 0</title>
+    <style>
+      :root { color-scheme: dark; }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0a08; }
+      #app { position: fixed; inset: 0; }
+      canvas { display: block; }
+
+      /* Start / pause overlay */
+      #overlay {
+        position: fixed; inset: 0; z-index: 10;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        gap: 1.2rem; cursor: pointer;
+        background: radial-gradient(circle at 50% 45%, rgba(40,38,20,0.55), rgba(8,8,5,0.92));
+        color: #d8d2a0;
+        font-family: "Courier New", ui-monospace, monospace;
+        letter-spacing: 0.08em;
+        transition: opacity 0.6s ease;
+        text-align: center;
+        user-select: none;
+      }
+      #overlay.hidden { opacity: 0; pointer-events: none; }
+      #overlay h1 { font-size: clamp(2rem, 6vw, 4rem); font-weight: 400; text-shadow: 0 0 18px rgba(200,190,120,0.4); }
+      #overlay p { font-size: 0.95rem; opacity: 0.8; max-width: 30rem; line-height: 1.7; }
+      #overlay .hint { margin-top: 0.5rem; font-size: 0.8rem; opacity: 0.55; }
+      #overlay .keys { font-size: 0.8rem; opacity: 0.5; }
+
+      /* Loading bar */
+      #loader { width: 220px; height: 3px; background: rgba(216,210,160,0.15); overflow: hidden; }
+      #loader > span { display: block; height: 100%; width: 0%; background: #d8d2a0; transition: width 0.25s ease; }
+
+      /* HUD: fake compass + coords */
+      #hud {
+        position: fixed; top: 14px; left: 14px; z-index: 5;
+        font-family: "Courier New", ui-monospace, monospace;
+        font-size: 12px; color: rgba(220,214,160,0.62);
+        text-shadow: 0 0 6px rgba(0,0,0,0.8);
+        pointer-events: none; line-height: 1.55;
+        opacity: 0; transition: opacity 0.8s ease;
+      }
+      #hud.on { opacity: 1; }
+      #hud .bad { color: rgba(230,120,90,0.8); }
+
+      /* center crosshair-ish dot */
+      #reticle {
+        position: fixed; left: 50%; top: 50%; z-index: 5;
+        width: 3px; height: 3px; margin: -1.5px 0 0 -1.5px;
+        background: rgba(230,224,180,0.35); border-radius: 50%;
+        pointer-events: none; opacity: 0; transition: opacity 0.8s ease;
+      }
+      #reticle.on { opacity: 1; }
+
+      /* ESC一時停止中の小さな再開ヒント（隅・非覆い） */
+      #resume-hint {
+        position: fixed; left: 50%; bottom: 28px; z-index: 6;
+        transform: translateX(-50%);
+        padding: 8px 16px; border-radius: 999px;
+        background: rgba(20,19,10,0.55);
+        border: 1px solid rgba(216,210,160,0.25);
+        font-family: "Courier New", ui-monospace, monospace;
+        font-size: 12px; letter-spacing: 0.08em;
+        color: rgba(224,218,170,0.85);
+        backdrop-filter: blur(2px);
+        pointer-events: none; user-select: none;
+        opacity: 0; transition: opacity 0.4s ease;
+      }
+      #resume-hint.on { opacity: 1; }
+
+      /* ジャンプスケア全画面フラッシュ */
+      #jumpscare {
+        position: fixed; inset: 0; z-index: 20;
+        background-position: center; background-repeat: no-repeat; background-size: cover;
+        background-color: #000;
+        opacity: 0; pointer-events: none;
+        transition: opacity 0.05s linear;
+      }
+      #jumpscare.on { opacity: 1; transition: opacity 0s; }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <div id="reticle"></div>
+
+    <!-- ジャンプスケアの全画面フラッシュ（接触時に一瞬表示） -->
+    <div id="jumpscare"></div>
+
+    <!-- ESC一時停止中だけ出す小さな再開ヒント（画面は覆わない） -->
+    <div id="resume-hint">クリックして再開</div>
+
+    <div id="hud">
+      <div>COMPASS&nbsp; <span id="hud-compass">---</span></div>
+      <div>GPS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span id="hud-coords">--.------, --.------</span></div>
+      <div>SIGNAL&nbsp;&nbsp; <span id="hud-signal">--</span></div>
+      <div>SANITY&nbsp;&nbsp; <span id="hud-san">100%</span></div>
+    </div>
+
+    <div id="overlay" style="display: none;">
+      <h1>LEVEL&nbsp;0</h1>
+      <p>黄ばんだ壁紙、湿ったカーペット、ハム音を鳴らす蛍光灯。<br />出口を探して歩き続けろ。</p>
+      <div id="loader"><span></span></div>
+      <div class="keys">W A S D — 移動 &nbsp;•&nbsp; SHIFT — 走る &nbsp;•&nbsp; マウス — 視点</div>
+      <div class="hint" id="hint-start">ローディング中...</div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
