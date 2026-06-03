@@ -14,6 +14,7 @@ export const CONFIG = {
     wallThickness: 0.3,   // 間仕切りの厚み（薄すぎ防止）
     seed: 0x9e3779b9,     // ワールド基準シード
     wallStyle: 'plain',   // 'plain'=無地の黄色壁 / 'wallpaper'=シェブロン壁紙
+    vastCeilingHeight: 15,// 超レアな巨大ホールの天井高（とても高い）
   },
 
   // --- 配色（新パレット：明るい黄色） ---
@@ -37,6 +38,11 @@ export const CONFIG = {
     openPillarChance: 0.35,// ホール内の柱確率
     graffitiChance: 0.05, // 壁に落書きが付く確率
     propChance: 0.04,     // 開放ホールのセルに障害物が置かれる確率（点在程度）
+    // 超レア：とても高い天井のとても広い「何もない」巨大ホール
+    vastHallChance: 0.01, // チャンクが巨大ホールになる確率（超まれ）
+    vastLightChance: 0.12,// 巨大ホールの高い天井に光パネルが付く確率（疎）
+    // 特殊：床に穴が格子状に並ぶ「落とし穴の部屋」（落ちるとジャンプスケア）
+    pitRoomChance: 0.01,   // チャンクが落とし穴部屋になる確率（テストは1.0に）
   },
 
   // --- プレイヤー ---

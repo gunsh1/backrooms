@@ -10,6 +10,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { CONFIG } from '../config.js';
 import { MazeGenerator } from './MazeGenerator.js';
 import { buildPropMesh } from './Props.js';
+import { PIT, buildDoor } from './PitRoom.js';
 
 const S = CONFIG.world.cellSize;
 const H = CONFIG.world.wallHeight;
@@ -33,14 +34,52 @@ function scaleUV(geo, su, sv) {
 
 export class RoomBuilder {
   // origin: チャンクの基準セル (cx0, cy0)。generation はそのチャンクの世代。
-  static build(cx0, cy0, generation, materials) {
+  // genFor(gx,gy): 隣接チャンクの世代を引く関数（巨大ホール境界判定に使用）。
+  static build(cx0, cy0, generation, materials, genFor = null) {
     const group = new THREE.Group();
     const ox = cx0 * S;
     const oz = cy0 * S;
     const span = N * S;
 
+    // 超レアな巨大ホール：天井を非常に高く・周囲は何もない空間に
+    const vast = MazeGenerator.isVastChunk(cx0, cy0, generation);
+    const pit = MazeGenerator.isPitChunk(cx0, cy0, generation);
+    const ceilingY = vast ? CONFIG.world.vastCeilingHeight : H;
+
     // ---- 床 ----
-    {
+    if (pit) {
+      // 落とし穴の部屋：梁の格子＋暗い穴の底
+      const beams = [];
+      const halfH = 0.4;
+      // 縦ビーム（Z方向・上面 y=0）
+      const first = Math.ceil(ox / PIT.pitch) * PIT.pitch;
+      for (let x = first; x < ox + span - 1e-6; x += PIT.pitch) {
+        const g = new THREE.BoxGeometry(PIT.beamW, halfH, span);
+        g.translate(x, -halfH / 2, oz + span / 2);
+        beams.push(g);
+      }
+      // 横ビーム（X方向）。交点での同一平面重なり(z-fighting)を避けるため
+      // 上面をごくわずかに下げる（4mm・見た目は無変化）。
+      const firstZ = Math.ceil(oz / PIT.pitch) * PIT.pitch;
+      for (let z = firstZ; z < oz + span - 1e-6; z += PIT.pitch) {
+        const g = new THREE.BoxGeometry(span, halfH, PIT.beamW);
+        g.translate(ox + span / 2, -halfH / 2 - 0.004, z);
+        beams.push(g);
+      }
+      if (beams.length) {
+        const merged = mergeGeometries(beams, false);
+        beams.forEach((g) => g.dispose());
+        const m = new THREE.Mesh(merged, materials.trim);
+        m.receiveShadow = m.castShadow = true;
+        group.add(m);
+      }
+      // 暗い底（穴の奥）
+      const voidGeo = new THREE.PlaneGeometry(span, span);
+      voidGeo.rotateX(-Math.PI / 2);
+      const voidMesh = new THREE.Mesh(voidGeo, materials.propDark);
+      voidMesh.position.set(ox + span / 2, -PIT.depth, oz + span / 2);
+      group.add(voidMesh);
+    } else {
       const geo = new THREE.PlaneGeometry(span, span, 1, 1);
       geo.rotateX(-Math.PI / 2);
       scaleUV(geo, span / FLOOR_TILE, span / FLOOR_TILE);
@@ -50,14 +89,34 @@ export class RoomBuilder {
       group.add(mesh);
     }
 
-    // ---- 天井 ----
+    // ---- 天井（巨大ホールは高い位置に） ----
     {
       const geo = new THREE.PlaneGeometry(span, span, 1, 1);
       geo.rotateX(Math.PI / 2);
       scaleUV(geo, span / CEIL_TILE, span / CEIL_TILE);
       const mesh = new THREE.Mesh(geo, materials.ceiling);
-      mesh.position.set(ox + span / 2, H, oz + span / 2);
+      mesh.position.set(ox + span / 2, ceilingY, oz + span / 2);
       group.add(mesh);
+    }
+
+    // ---- 巨大ホールの周壁（隣が通常高さの時だけ段差を塞ぐ立ち上がり） ----
+    const wallGeos0 = [];
+    if (vast) {
+      const riserH = ceilingY - H;
+      const ry = (H + ceilingY) / 2;
+      const addRiser = (w, d, x, z) => {
+        const g = new THREE.BoxGeometry(w, riserH, d);
+        scaleUV(g, Math.max(w, d) / WALL_TILE, riserH / WALL_TILE);
+        g.translate(x, ry, z);
+        wallGeos0.push(g);
+      };
+      // 隣チャンクも巨大ホールなら段差が無いので壁は不要（=シームレスに繋がる）
+      const neighborVast = (ngx, ngy) =>
+        genFor ? MazeGenerator.isVastChunk(ngx, ngy, genFor(ngx, ngy)) : false;
+      if (!neighborVast(cx0, cy0 - 1)) addRiser(span, T, ox + span / 2, oz);          // 南
+      if (!neighborVast(cx0, cy0 + N)) addRiser(span, T, ox + span / 2, oz + span);   // 北
+      if (!neighborVast(cx0 - 1, cy0)) addRiser(T, span, ox, oz + span / 2);          // 西
+      if (!neighborVast(cx0 + N, cy0)) addRiser(T, span, ox + span, oz + span / 2);   // 東
     }
 
     // ---- 壁・巾木・柱・パネルを集計 ----
@@ -119,11 +178,11 @@ export class RoomBuilder {
           dummy.updateMatrix();
           pillarMatrices.push(dummy.matrix.clone());
         }
-        // 天井ライト（セル中央）
+        // 天井ライト（セル中央。巨大ホールは高い天井に付く）
         if (c.light !== 'none') {
           panels.push({
             x: wx + S / 2,
-            y: H - 0.02,
+            y: ceilingY - 0.02,
             z: wz + S / 2,
             dead: c.light === 'dead',
           });
@@ -138,7 +197,8 @@ export class RoomBuilder {
       }
     }
 
-    // ---- 壁マージ ----
+    // ---- 壁マージ（巨大ホールの周壁 riser も含める） ----
+    if (wallGeos0.length) for (const g of wallGeos0) wallGeos.push(g);
     if (wallGeos.length) {
       const merged = mergeGeometries(wallGeos, false);
       wallGeos.forEach((g) => g.dispose());
@@ -178,8 +238,8 @@ export class RoomBuilder {
       g.translate(p.x, p.y, p.z);
       (p.dead ? deadGeos : litGeos).push(g);
 
-      // フランジ：天井と面一の平らな縁取り（出っ張らない）
-      const fy = H - 0.004;
+      // フランジ：天井と面一の平らな縁取り（出っ張らない）。パネル高に追従。
+      const fy = p.y + 0.016;
       const outer = PW + bw * 2;
       const mkBar = (w, d, dx, dz) => {
         const b = new THREE.PlaneGeometry(w, d);
@@ -220,7 +280,19 @@ export class RoomBuilder {
       }
     }
 
+    // ---- 出口ドア（落とし穴部屋のみ。Eキーでクリア） ----
+    const doors = [];
+    if (pit) {
+      const dx = Math.round((ox + span / 2) / PIT.pitch) * PIT.pitch;
+      const dz = oz + span - PIT.pitch; // 奥側のグリッド線（梁の上）
+      const door = buildDoor(materials);
+      door.position.set(dx, 0, dz);
+      group.add(door);
+      doors.push({ x: dx, y: 1.2, z: dz });
+    }
+
     group.userData.panels = panels;
+    group.userData.doors = doors;
     return group;
   }
 }

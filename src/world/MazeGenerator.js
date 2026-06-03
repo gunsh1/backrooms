@@ -31,10 +31,47 @@ function chunkOpenness(gx, gy, generation) {
   return r < CONFIG.maze.openHallChance ? 1 : 0;
 }
 
+// チャンク単位の「巨大ホール」判定（超まれ）。何もない・天井が非常に高い。
+function chunkVast(gx, gy, generation) {
+  const cx = Math.floor(gx / N);
+  const cy = Math.floor(gy / N);
+  const r = mulberry32(hash2(hash2(cx, cy, baseSeed ^ 0x2772), generation, 0x3333))();
+  return r < CONFIG.maze.vastHallChance;
+}
+
+// チャンク単位の「落とし穴の部屋」判定。床が穴の格子。
+function chunkPit(gx, gy, generation) {
+  const cx = Math.floor(gx / N);
+  const cy = Math.floor(gy / N);
+  const r = mulberry32(hash2(hash2(cx, cy, baseSeed ^ 0x1A2B), generation, 0x55AA))();
+  return r < CONFIG.maze.pitRoomChance;
+}
+
 export const MazeGenerator = {
   // セルの構造データ
   cell(gx, gy, generation = 0) {
     const m = CONFIG.maze;
+
+    // 落とし穴の部屋：壁/柱/障害物なし。床は穴格子（RoomBuilderが構築）。
+    if (chunkPit(gx, gy, generation)) {
+      let light = 'none';
+      const lr = cellRng(gx, gy, generation, 53);
+      if (lr() < m.lightChance) light = lr() < m.deadLightChance ? 'dead' : 'panel';
+      return {
+        eastWall: false, northWall: false, pillar: false,
+        light, graffiti: null, prop: null, pit: true,
+      };
+    }
+
+    // 巨大ホール：壁/柱/障害物/落書きを一切持たない「何もない」空間
+    if (chunkVast(gx, gy, generation)) {
+      let light = 'none';
+      if (cellRng(gx, gy, generation, 53)() < m.vastLightChance) light = 'panel';
+      return {
+        eastWall: false, northWall: false, pillar: false,
+        light, graffiti: null, prop: null, vast: true,
+      };
+    }
 
     // 開放ホールのチャンクでは壁/柱を疎にして広い空間に
     const open = chunkOpenness(gx, gy, generation);
@@ -79,4 +116,9 @@ export const MazeGenerator = {
   hasEastWall(gx, gy, gen) { return MazeGenerator.cell(gx, gy, gen).eastWall; },
   hasNorthWall(gx, gy, gen) { return MazeGenerator.cell(gx, gy, gen).northWall; },
   hasPillar(gx, gy, gen) { return MazeGenerator.cell(gx, gy, gen).pillar; },
+
+  // チャンクが巨大ホールか（RoomBuilder が天井高・周壁の判断に使う）
+  isVastChunk(gx, gy, gen) { return chunkVast(gx, gy, gen); },
+  // チャンクが落とし穴の部屋か
+  isPitChunk(gx, gy, gen) { return chunkPit(gx, gy, gen); },
 };

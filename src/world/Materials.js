@@ -142,6 +142,14 @@ export class Materials {
       color: 0x2a261c, roughness: 0.9, metalness: 0.1,
     });
 
+    // --- 木のドア ---
+    this.materials.wood = new THREE.MeshStandardMaterial({
+      color: 0x6e4a28, roughness: 0.72, metalness: 0.0,
+    });
+    this.materials.woodDark = new THREE.MeshStandardMaterial({
+      color: 0x4a3018, roughness: 0.78, metalness: 0.0,
+    });
+
     // --- 落書きデカール（透過・複数バリエーション） ---
     this.materials.graffiti = GRAFFITI_TEXTS.map((t, i) => new THREE.MeshStandardMaterial({
       map: makeGraffiti(t, 256, i + 1),

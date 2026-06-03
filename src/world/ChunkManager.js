@@ -23,6 +23,7 @@ export class ChunkManager {
     this.generation = new Map();  // key -> 現在の世代
     this.seen = new Set();        // 一度でも読まれたチャンク
     this.activePanels = [];       // 全ロード中チャンクの光パネル world 位置
+    this.activeDoors = [];        // 全ロード中チャンクの出口ドア world 位置
     this._lastChunk = null;
   }
 
@@ -91,18 +92,22 @@ export class ChunkManager {
 
     const cx0 = cx * N;
     const cy0 = cy * N;
-    const group = RoomBuilder.build(cx0, cy0, gen, this.materials);
+    const group = RoomBuilder.build(
+      cx0, cy0, gen, this.materials, (gx, gy) => this.generationForCell(gx, gy));
     this.scene.add(group);
     this.loaded.set(key, { group, cx, cy, gen });
   }
 
   _rebuildPanelList() {
     this.activePanels.length = 0;
+    this.activeDoors.length = 0;
     for (const chunk of this.loaded.values()) {
       const panels = chunk.group.userData.panels;
       if (panels) {
         for (const p of panels) if (!p.dead) this.activePanels.push(p);
       }
+      const doors = chunk.group.userData.doors;
+      if (doors) for (const d of doors) this.activeDoors.push(d);
     }
   }
 

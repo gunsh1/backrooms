@@ -88,6 +88,21 @@
       }
       #resume-hint.on { opacity: 1; }
 
+      /* ドア接近時の脱出プロンプト */
+      #door-prompt {
+        position: fixed; left: 50%; bottom: 18%; z-index: 6;
+        transform: translateX(-50%);
+        padding: 10px 22px; border-radius: 3px;
+        background: rgba(20,19,10,0.6);
+        border: 1px solid rgba(216,210,160,0.45);
+        font-family: "Courier New", ui-monospace, monospace;
+        font-size: 15px; letter-spacing: 0.1em;
+        color: rgba(232,226,180,0.95);
+        pointer-events: none; user-select: none;
+        opacity: 0; transition: opacity 0.25s ease;
+      }
+      #door-prompt.on { opacity: 1; }
+
       /* ジャンプスケア全画面フラッシュ */
       #jumpscare {
         position: fixed; inset: 0; z-index: 20;
@@ -97,6 +112,45 @@
         transition: opacity 0.05s linear;
       }
       #jumpscare.on { opacity: 1; transition: opacity 0s; }
+
+      /* クリア「COMING SOON」 */
+      #comingsoon {
+        position: fixed; inset: 0; z-index: 30;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center; gap: 1rem;
+        background: #000;
+        color: #e6e0b4;
+        font-family: "Courier New", ui-monospace, monospace;
+        opacity: 0; pointer-events: none; cursor: pointer;
+        transition: opacity 1.2s ease;
+      }
+      #comingsoon.on { opacity: 1; pointer-events: auto; }
+      #comingsoon .cs-title { font-size: clamp(2.4rem, 9vw, 6rem); letter-spacing: 0.25em; text-shadow: 0 0 24px rgba(216,210,160,0.4); }
+      #comingsoon .cs-sub { font-size: 0.95rem; opacity: 0.6; letter-spacing: 0.2em; }
+      /* クレジット（COMING SOON の少し後にフェードイン） */
+      #comingsoon .cs-credits {
+        margin-top: 2rem; text-align: center; line-height: 1.95;
+        font-size: 0.86rem; letter-spacing: 0.06em;
+        color: rgba(216,210,160,0.72);
+        opacity: 0; transition: opacity 1.6s ease 1.4s;
+      }
+      #comingsoon.on .cs-credits { opacity: 1; }
+      #comingsoon .cs-credits .cs-head { color: rgba(230,224,180,0.92); letter-spacing: 0.12em; margin-bottom: 0.6rem; }
+      #comingsoon .cs-credits .cs-thanks { margin-top: 1.3rem; letter-spacing: 0.18em; opacity: 0.9; }
+      #comingsoon .cs-credits .cs-license { margin-top: 1.1rem; font-size: 0.74rem; opacity: 0.5; }
+      #comingsoon .cs-credits a { color: #9fd0ff; text-decoration: none; }
+      #comingsoon .cs-credits a:hover { text-decoration: underline; }
+      /* RESTART ボタン */
+      #cs-restart {
+        margin-top: 2.4rem; padding: 0.7rem 2.6rem;
+        font-family: inherit; font-size: 0.95rem; letter-spacing: 0.2em;
+        color: #e6e0b4; background: rgba(20,19,10,0.4);
+        border: 1px solid rgba(216,210,160,0.5); border-radius: 2px;
+        cursor: pointer; opacity: 0;
+        transition: opacity 1.6s ease 1.6s, background 0.25s ease, border-color 0.25s ease;
+      }
+      #comingsoon.on #cs-restart { opacity: 1; }
+      #cs-restart:hover { background: rgba(216,210,160,0.16); border-color: rgba(216,210,160,0.9); }
     </style>
   </head>
   <body>
@@ -107,8 +161,23 @@
     <!-- ジャンプスケアの全画面フラッシュ（接触時に一瞬表示） -->
     <div id="jumpscare"></div>
 
+    <!-- クリア画面（ドアでEを押すと表示）＋クレジット -->
+    <div id="comingsoon">
+      <div class="cs-title">COMING&nbsp;SOON</div>
+      <div class="cs-sub">— to be continued —</div>
+      <div class="cs-credits">
+        <p class="cs-head">LEVEL&nbsp;0 — Backrooms Walking Simulator</p>
+        <p>Created by&nbsp;<b>gunsh1</b>&nbsp;&nbsp;X:&nbsp;<a href="https://x.com/gunsh1_kun" target="_blank" rel="noopener">@gunsh1_kun</a></p>
+        <p class="cs-license">Wallpapers: “Backrooms Wallpapers” by Huuxloc — CC-BY-4.0</p>
+      </div>
+      <button id="cs-restart">RESTART</button>
+    </div>
+
     <!-- ESC一時停止中だけ出す小さな再開ヒント（画面は覆わない） -->
     <div id="resume-hint">クリックして再開</div>
+
+    <!-- ドア接近時の脱出プロンプト -->
+    <div id="door-prompt">[ E ] キーを押して脱出</div>
 
     <div id="hud">
       <div>COMPASS&nbsp; <span id="hud-compass">---</span></div>

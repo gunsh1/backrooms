@@ -209,6 +209,15 @@ export class Player {
         }
       }
     }
+    // 出口ドア（貫通しない）
+    const doors = this.chunks.activeDoors;
+    if (doors) {
+      for (const dr of doors) {
+        if (Math.abs(dr.x - x) < 3 && Math.abs(dr.z - z) < 3) {
+          list.push({ minX: dr.x - 0.85, maxX: dr.x + 0.85, minZ: dr.z - 0.2, maxZ: dr.z + 0.2 });
+        }
+      }
+    }
     return list;
   }
 }
